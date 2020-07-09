@@ -24,7 +24,7 @@ def download_non_redundant_set():
     data = response.read()
     text = data.decode('utf-8')
     path_to_location = Path('./RNA_SETS/')
-    save_file(text, path_to_location + filename)
+    save_file(text, path_to_location / filename)
 
 
 if __name__ == "__main__":
