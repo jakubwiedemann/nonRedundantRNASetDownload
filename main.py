@@ -1,4 +1,5 @@
 import urllib.request
+import os
 from datetime import date
 from pathlib import Path
 
@@ -23,9 +24,12 @@ def download_non_redundant_set():
         filename = 'output_d' + timestamp + '.csv'
     data = response.read()
     text = data.decode('utf-8')
-    path_to_location = Path('./RNA_SETS/')
+
+    path_to_location = Path('./RNA_SETS')
     save_file(text, path_to_location / filename)
 
 
 if __name__ == "__main__":
+    if not os.path.exists(Path('./RNA_SETS')):
+        os.makedirs(Path('RNA_SETS'))
     download_non_redundant_set()
