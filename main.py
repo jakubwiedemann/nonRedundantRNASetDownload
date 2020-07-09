@@ -1,5 +1,6 @@
 import urllib.request
-
+from datetime import date
+from pathlib import Path
 
 def save_file(text, filename):
     file = open(filename, 'w')
@@ -17,11 +18,13 @@ def download_non_redundant_set():
         info = response.info()['Content-Disposition']
         filename = info.split('filename=',1)[1]
     except:
-        filename = 'output.csv'
+        today = date.today()
+        timestamp = today.strftime("%d-%m-%Y")
+        filename = 'output_d' + timestamp + '.csv'
     data = response.read()
     text = data.decode('utf-8')
-
-    save_file(text, filename)
+    path_to_location = Path('./RNA_SETS/')
+    save_file(text, path_to_location + filename)
 
 
 if __name__ == "__main__":
