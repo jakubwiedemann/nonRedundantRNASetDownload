@@ -2,11 +2,18 @@
 
 ##Description
 
-The purpose of this tool is to get the current non-redundant set of RNAs or identify which structures has been added/removed since last update.
+The purpose of this tool is to get the current non-redundant set of RNAs or identify which structures have been added/removed since the last update.
 
-The workflow consist of:
+The workflow consists of:
 
-1. Downloading non-redundant set from http://rna.bgsu.edu/rna3dhub/ and saving it in RNA_SETS folder.
-2. If RNA_SETS folder contains only 1 file that means that there is no initial set and it needs to be created:
-2.1. The latest file is parsed and a new file 'init_set.txt' is being created. This file contain all of the structures from the latest release.
+1. Downloading non-redundant set from http://rna.bgsu.edu/rna3dhub/ and saving it in the RNA_SETS folder.
+2. Creating the initial_set or files_to_update_file:
+* If RNA_SETS folder contains only one file, that means that there is no initial set and it needs to be created. The script creates init_set.txt file that contains all structures PDB ID from the latest non-redundant set.
+* If the RNA_SETS folder contains more than one file, it means that the user has already established an initial set and needs to identify files that need to be added/removed. The script creates files_to_update.txt file which contains structures that need to be added (thair PDB is is 
+preceded by '+' sign)or removed (PDB ID preceded by '-' sign).
 
+##Run
+
+To run type:
+
+python main.py in the console
