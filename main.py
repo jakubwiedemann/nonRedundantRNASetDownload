@@ -70,12 +70,12 @@ def parse_output_file1():
     file.close()
     for line in lines:
         if line[0] =='+':
-             download_PDB_structures(line[1:5])
+             download_PDB_structures(line.replace("+","")[:4])
 
 
 
 def download_PDB_structures(pdb_ID):
-    pdb_data_folder = Path("PDB_files/")
+    pdb_data_folder = Path("PDB_files_raw/")
     if not os.path.exists(pdb_data_folder):
         os.makedirs(pdb_data_folder)
     pdb_ID = pdb_ID.lower()
@@ -118,7 +118,8 @@ def standardize_models():
                                 '5MU', '9QV']
 
     list_of_nucleotides = ['A', 'C', 'G', 'U']
-
+    list_of_nucleotides = [*list_of_nucleotides, *non_standard_residues_A, *non_standard_residues_G,
+                           *non_standard_residues_C, *non_standard_residues_U]
 
     dict_non_standard_residues_A = {non_standard_residues_A[i]: 'A' for i in range(0, len(non_standard_residues_A))}
     dict_non_standard_residues_G = {non_standard_residues_G[i]: 'G' for i in range(0, len(non_standard_residues_G))}
@@ -128,12 +129,14 @@ def standardize_models():
     dict_non_standard_residues = {}
     for dictionary in dict_list:
         dict_non_standard_residues = merge_dictionary(dict_non_standard_residues, dictionary)
-    acceptable_atoms = ['C2', 'C4', 'C6', 'C8', 'N1', 'N2', 'N3', 'N4', 'N6', 'N7', 'N9', 'O2', 'O4', 'O6', 'C1\'', 'C2\'', 'C3\'', 'C4\'', 'C5\'', 'O2\'', 'O3\'', 'O4\'', 'O5\'', 'OP1', 'OP2', 'P' ]
-    residue_to_remove= []
-    chain_to_remove = []
-    atom_to_remove = []
-    for files in glob.glob('PDB_files/*.cif'):
-        pdb_data_folder = Path("PDB_files/")
+    acceptable_atoms = ['C2', 'C4', 'C6', 'C8', 'N1', 'N2', 'N3', 'N4', 'N6', 'N7', 'N9', 'O2', 'O4', 'O6',
+                        'C1\'', 'C2\'', 'C3\'', 'C4\'', 'C5\'', 'O2\'', 'O3\'', 'O4\'', 'O5\'', 'OP1', 'OP2', 'P' ]
+
+    for files in glob.glob('PDB_files_raw/*.cif'):
+        residue_to_remove= []
+        chain_to_remove = []
+        atom_to_remove = []
+        pdb_data_folder = Path("PDB_files_raw/")
         structure_name = files[len(files)-8:-4]
         try:
             structure = get_structure(pdb_data_folder, structure_name)
@@ -213,11 +216,11 @@ def save_structure(structure, structure_PDB_ID):
     io=MMCIFIO()
     io.set_structure(structure)
     io.save('./PDB_files/' + name_of_file)
+
     return name_of_file
 
 
 if __name__ == "__main__":
-
     if not os.path.exists(Path('./RNA_SETS')):
         os.makedirs(Path('RNA_SETS'))
     download_non_redundant_set()
