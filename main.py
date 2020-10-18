@@ -18,7 +18,7 @@ def download_non_redundant_set():
     resolution = '3.0A'
     base_url = 'http://rna.bgsu.edu/rna3dhub/nrlist/download'
     release = 'current'
-    url = '/'.join([base_url, release, resolution])
+    url = '/'.join([base_url, release])
     response = urllib.request.urlopen(url)
     try:
         info = response.info()['Content-Disposition']
