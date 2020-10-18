@@ -138,49 +138,50 @@ def standardize_models():
         atom_to_remove = []
         pdb_data_folder = Path("PDB_files_raw/")
         structure_name = files[len(files)-8:-4]
-        try:
-            structure = get_structure(pdb_data_folder, structure_name)
-        except:
-            continue
-        for model in structure:
-            for chain in model:
-                for residue in chain:
-                    if residue.resname not in list_of_nucleotides:
-
-                        residue_to_remove.append((chain.id, residue.id))
-                    if residue.resname in dict_non_standard_residues:
-
-                        residue.resname = dict_non_standard_residues[residue.resname]
-                        residue_id = list(residue.id)
-                        residue_id[0] = ' '
-                        residue.id = tuple(residue_id)
-                        for atom in residue:
-                            if atom.id not in acceptable_atoms:
-
-                                atom_to_remove.append((chain.id, residue.id, atom.id))
-                                atom_id = list(atom.full_id[3])
-                                atom_id[0] = ' '
-                                atom_tuple = tuple(atom_id)
-                                atom.full_id = [atom.full_id[0], atom.full_id[1], atom.full_id[2], atom_tuple, atom.full_id[4]]
-
-
-                if len(chain) == 0:
-                    chain_to_remove.append(chain.id)
-        for atom in atom_to_remove:
+        if (not is_non_zero_file(pdb_data_folder / (structure_name + ".pdb"))) and (not is_non_zero_file(pdb_data_folder / (structure_name + ".cif"))):
             try:
-                model[atom[0]][atom[1]].detach_child(atom[2])
+                structure = get_structure(pdb_data_folder, structure_name)
             except:
                 continue
+            for model in structure:
+                for chain in model:
+                    for residue in chain:
+                        if residue.resname not in list_of_nucleotides:
 
-        for residue in residue_to_remove:
-            try:
-                model[residue[0]].detach_child(residue[1])
-            except:
-                continue
+                            residue_to_remove.append((chain.id, residue.id))
+                        if residue.resname in dict_non_standard_residues:
 
-        for chain in chain_to_remove:
-            model.detach_child(chain)
-        save_structure(structure, structure_name)
+                            residue.resname = dict_non_standard_residues[residue.resname]
+                            residue_id = list(residue.id)
+                            residue_id[0] = ' '
+                            residue.id = tuple(residue_id)
+                            for atom in residue:
+                                if atom.id not in acceptable_atoms:
+
+                                    atom_to_remove.append((chain.id, residue.id, atom.id))
+                                    atom_id = list(atom.full_id[3])
+                                    atom_id[0] = ' '
+                                    atom_tuple = tuple(atom_id)
+                                    atom.full_id = [atom.full_id[0], atom.full_id[1], atom.full_id[2], atom_tuple, atom.full_id[4]]
+
+
+                    if len(chain) == 0:
+                        chain_to_remove.append(chain.id)
+            for atom in atom_to_remove:
+                try:
+                    model[atom[0]][atom[1]].detach_child(atom[2])
+                except:
+                    continue
+
+            for residue in residue_to_remove:
+                try:
+                    model[residue[0]].detach_child(residue[1])
+                except:
+                    continue
+
+            for chain in chain_to_remove:
+                model.detach_child(chain)
+            save_structure(structure, structure_name)
 
 
 
