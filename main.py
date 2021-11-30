@@ -4,10 +4,11 @@ import csv
 from datetime import date
 from pathlib import Path
 import difflib
-from Bio.PDB import PDBList
-from Bio.PDB.mmcifio import MMCIFIO
+
 import glob
 from Bio.PDB import *
+import requests
+import json
 
 def save_file(text, filename):
     file = open(filename, 'w')
@@ -15,28 +16,58 @@ def save_file(text, filename):
     file.close()
 
 def download_non_redundant_set():
-    resolution = '3.0A'
-    base_url = 'http://rna.bgsu.edu/rna3dhub/nrlist/download'
-    release = 'current'
-    url = '/'.join([base_url, release])
-    response = urllib.request.urlopen(url)
-    try:
-        info = response.info()['Content-Disposition']
-        filename = info.split('filename=',1)[1]
-    except:
-        today = date.today()
-        timestamp = today.strftime("%d-%m-%Y")
-        filename = 'output_d' + timestamp + '.csv'
-    data = response.read()
-    text = data.decode('utf-8')
+    searchquery = {
+    "query": {
+        "type": "group",
+        "nodes": [{
+            "type": "terminal",
+            "service": "text",
+            "parameters": {
+                "attribute": "rcsb_entry_container_identifiers.entry_id",
+                "operator": "exists"
+                }
+            },
+            {
+            "type": "terminal",
+            "service": "text",
+            "parameters": {
+                "attribute": "entity_poly.rcsb_entity_polymer_type",
+                "operator": "exact_match",
+                "value": "RNA"
+                }
+            }],
+            "logical_operator": "and",
+            "label": "text"
+    },
+    "return_type": "entry",
+    "request_options": {
+        "return_all_hits": True,
+        "scoring_strategy": "combined",
+        "sort": [{
+            "sort_by": "score",
+            "direction": "desc"
+            }]
+        }
+    }
+
+    url = 'https://search.rcsb.org/rcsbsearch/v1/query?json='
+    request = requests.get(url + json.dumps(searchquery)).content
+    result_set = json.loads(request)['result_set']
+
+    current_date = date.today()
+    current_date = current_date.strftime("%d-%m-%Y")
 
     path_to_location = Path('./RNA_SETS')
-    save_file(text, path_to_location / filename)
+    name_of_file = 'list_of_PDBs_rtrieved_on_' + str(current_date) + '.txt'
+    pdb_file = open(path_to_location / name_of_file, 'w')
+    for record in result_set:
+        pdb_file.write(str(record['identifier']) + '\n')
+    pdb_file.close()
 
 
 def pick_file(n):
     base_path = Path('./RNA_SETS')
-    list_of_files = list(base_path.glob('*.csv'))
+    list_of_files = list(base_path.glob('*.txt'))
     list_of_files_sorted = sorted(list_of_files, key=os.path.getmtime)
     picked_file = list_of_files_sorted[-n]
     return picked_file
@@ -44,10 +75,10 @@ def pick_file(n):
 def parse_output_file(filename):
     list_of_structures = []
     path_to_file = Path(filename)
-    with open(path_to_file, newline='') as csvfile:
-        csv_file_content = csv.reader(csvfile, delimiter=',', quotechar='|')
-        for row in csv_file_content:
-            list_of_structures.append('+' + row[1][1:7])
+    input_file = open(path_to_file, 'r')
+    file_content = input_file.readlines()
+    for line in file_content:
+        list_of_structures.append(line)
     return list_of_structures
 
 def find_difference(list_of_structures_new, list_of_structures_old):
@@ -57,13 +88,14 @@ def find_difference(list_of_structures_new, list_of_structures_old):
             if line.startswith(prefix):
                 break
         else:
-            f.write(line +'\n')
+            f.write(line)
     f.close()
 
 def parse_output_file1():
     output_data_folder = Path("./")
     if (is_non_zero_file(output_data_folder / 'files_to_update.txt')):
         file = open('files_to_update.txt', mode = 'r')
+
     elif (is_non_zero_file(output_data_folder / 'init_set.txt')):
         file = open('init_set.txt', mode = 'r')
     lines = file.readlines()
@@ -72,14 +104,12 @@ def parse_output_file1():
         if line[0] =='+':
              download_PDB_structures(line.replace("+","")[:4])
 
-
-
 def download_PDB_structures(pdb_ID):
     pdb_data_folder = Path("PDB_files_raw/")
     if not os.path.exists(pdb_data_folder):
         os.makedirs(pdb_data_folder)
     pdb_ID = pdb_ID.lower()
-    if (not is_non_zero_file(pdb_data_folder / (pdb_ID + ".pdb"))) and (not is_non_zero_file(pdb_data_folder / (pdb_ID + ".cif"))):
+    if not is_non_zero_file(pdb_data_folder / (pdb_ID + ".cif")):
         PDBList().retrieve_pdb_file(pdb_ID,pdir=pdb_data_folder, file_format='mmCif')
 
 def is_non_zero_file(file_path):
@@ -102,7 +132,7 @@ def standardize_models():
                                'BGH', 'N6G', 'RFJ', 'ZGU', '7MG', 'CG1', 'G1G', 'G25', 'G2L', 'G46',
                                'G48', 'G7M', 'GAO', 'GDO', 'GDP', 'GH3', 'GNG', 'GOM', 'GRB', 'GTP',
                                'KAG', 'KAK', 'O2G', 'OMG', '8AA', '8OS', 'LG', 'PGP', 'P7G', 'TPG',
-                               'TG', 'XTS', '102', '18M', '1MG']
+                               'TG', 'XTS', '102', '18M', '1MG', '5GP']
 
     non_standard_residues_C = ['A5M', 'A6C', 'E3C', 'IC', 'M4C', 'M5M', '6OO', 'B8Q', 'B8T', 'B9H',
                                'JMH', 'N5M', 'RPC', 'RSP', 'RSQ', 'ZBC', 'ZCY', '73W', 'C25', 'C2L',
@@ -130,7 +160,7 @@ def standardize_models():
     for dictionary in dict_list:
         dict_non_standard_residues = merge_dictionary(dict_non_standard_residues, dictionary)
     acceptable_atoms = ['C2', 'C4', 'C6', 'C8', 'N1', 'N2', 'N3', 'N4', 'N6', 'N7', 'N9', 'O2', 'O4', 'O6',
-                        'C1\'', 'C2\'', 'C3\'', 'C4\'', 'C5\'', 'O2\'', 'O3\'', 'O4\'', 'O5\'', 'OP1', 'OP2', 'P' ]
+                        'C1\'', 'C2\'', 'C3\'', 'C4\'', 'C5\'', 'O2\'', 'O3\'', 'O4\'', 'O5\'', 'OP1', 'OP2', 'P', 'O1P', 'O2P', 'C5']
 
     for files in glob.glob('PDB_files_raw/*.cif'):
         residue_to_remove= []
@@ -226,12 +256,14 @@ if __name__ == "__main__":
         os.makedirs(Path('RNA_SETS'))
     download_non_redundant_set()
     base_path = Path('./RNA_SETS')
-    if len(list(base_path.glob('*.csv'))) > 1:
+    if len(list(base_path.glob('*.txt'))) > 1:
         list_of_structures_new = parse_output_file(pick_file(1))
         list_of_structures_old = parse_output_file(pick_file(2))
         find_difference(list_of_structures_new, list_of_structures_old)
     else:
-        save_file('\n'.join(parse_output_file(pick_file(1))), 'init_set.txt')
+        list_of_structures = parse_output_file(pick_file(1))
+        list_of_structures = ['+' + s for s in list_of_structures]
+        save_file(''.join(list_of_structures), 'init_set.txt')
     parse_output_file1()
     standardize_models()
 
