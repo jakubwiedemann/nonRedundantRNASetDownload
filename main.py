@@ -51,8 +51,10 @@ def download_non_redundant_set():
     }
 
     url = 'https://search.rcsb.org/rcsbsearch/v1/query?json='
-    request = requests.get(url + json.dumps(searchquery)).content
-    result_set = json.loads(request)['result_set']
+    searchquery_str = json.dumps(searchquery)
+    resultquery = urllib.parse.quote_plus(searchquery_str)
+    request = requests.get(url + resultquery).content
+    result_set = json.loads(request.decode("utf-8"))['result_set']
 
     current_date = date.today()
     current_date = current_date.strftime("%d-%m-%Y")
